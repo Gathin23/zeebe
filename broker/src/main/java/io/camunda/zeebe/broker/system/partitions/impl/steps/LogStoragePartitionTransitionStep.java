@@ -119,8 +119,7 @@ public final class LogStoragePartitionTransitionStep implements PartitionTransit
 
     if (raftTerm != targetTerm) {
       return left(
-          new IllegalStateException(
-              String.format(WRONG_TERM_ERROR_MSG, targetTerm, raftTerm, context.getPartitionId())));
+          new LogStorageTermMissmatchException(targetTerm, raftTerm, context.getPartitionId()));
     } else {
       final var logStorage = AtomixLogStorage.ofPartition(server::openReader, logAppender);
       return right(logStorage);
@@ -138,6 +137,13 @@ public final class LogStoragePartitionTransitionStep implements PartitionTransit
           String.format(
               "Expect to append entry (positions %d - %d), but was in Follower role. Followers must not append entries to the log storage",
               lowestPosition, highestPosition));
+    }
+  }
+
+  public static final class LogStorageTermMissmatchException extends RuntimeException {
+    private LogStorageTermMissmatchException(
+        final long expectedTerm, final long actualTerm, final int partitionId) {
+      super(String.format(WRONG_TERM_ERROR_MSG, expectedTerm, actualTerm, partitionId));
     }
   }
 }
