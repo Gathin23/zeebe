@@ -59,14 +59,14 @@ public final class DbMessageStartEventSubscriptionState
   }
 
   @Override
-  public void put(final long key, final MessageStartEventSubscriptionRecord subscription) {
+  public void create(final long key, final MessageStartEventSubscriptionRecord subscription) {
     messageStartEventSubscription.setKey(key).setRecord(subscription);
 
     messageName.wrapBuffer(subscription.getMessageNameBuffer());
     processDefinitionKey.wrapLong(subscription.getProcessDefinitionKey());
-    subscriptionsColumnFamily.put(
+    subscriptionsColumnFamily.upsert(
         messageNameAndProcessDefinitionKey, messageStartEventSubscription);
-    subscriptionsOfProcessDefinitionKeyColumnFamily.put(
+    subscriptionsOfProcessDefinitionKeyColumnFamily.upsert(
         processDefinitionKeyAndMessageName, DbNil.INSTANCE);
   }
 

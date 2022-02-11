@@ -104,7 +104,7 @@ public class TemporaryVariableMigrationTest {
       // given database with legacy records
       legacyTemporaryVariablesState =
           new LegacyDbTemporaryVariablesState(zeebeDb, transactionContext);
-      legacyTemporaryVariablesState.put(EVENT_SCOPE_KEY, VARIABLES);
+      legacyTemporaryVariablesState.upsert(EVENT_SCOPE_KEY, VARIABLES);
       variableState = new DbVariableState(zeebeDb, transactionContext);
       elementInstanceState = new DbElementInstanceState(zeebeDb, transactionContext, variableState);
     }

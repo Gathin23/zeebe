@@ -62,17 +62,17 @@ public final class LegacyDbProcessMessageSubscriptionState {
             DbNil.INSTANCE);
   }
 
-  public void put(
+  public void upsert(
       final long key, final ProcessMessageSubscriptionRecord record, final long commandSentTime) {
     wrapSubscriptionKeys(record.getElementInstanceKey(), record.getMessageNameBuffer());
 
     processMessageSubscription.reset();
     processMessageSubscription.setKey(key).setRecord(record).setCommandSentTime(commandSentTime);
 
-    subscriptionColumnFamily.put(elementKeyAndMessageName, processMessageSubscription);
+    subscriptionColumnFamily.upsert(elementKeyAndMessageName, processMessageSubscription);
 
     sentTime.wrapLong(commandSentTime);
-    sentTimeColumnFamily.put(sentTimeCompositeKey, DbNil.INSTANCE);
+    sentTimeColumnFamily.upsert(sentTimeCompositeKey, DbNil.INSTANCE);
   }
 
   public void updateToOpenedState(final ProcessMessageSubscriptionRecord record) {
@@ -165,7 +165,7 @@ public final class LegacyDbProcessMessageSubscriptionState {
     wrapSubscriptionKeys(
         subscription.getRecord().getElementInstanceKey(),
         subscription.getRecord().getMessageNameBuffer());
-    subscriptionColumnFamily.put(elementKeyAndMessageName, subscription);
+    subscriptionColumnFamily.upsert(elementKeyAndMessageName, subscription);
 
     final long updatedSentTime = subscription.getCommandSentTime();
     if (updatedSentTime != previousSentTime) {
@@ -176,7 +176,7 @@ public final class LegacyDbProcessMessageSubscriptionState {
 
       if (updatedSentTime > 0) {
         sentTime.wrapLong(updatedSentTime);
-        sentTimeColumnFamily.put(sentTimeCompositeKey, DbNil.INSTANCE);
+        sentTimeColumnFamily.upsert(sentTimeCompositeKey, DbNil.INSTANCE);
       }
     }
   }

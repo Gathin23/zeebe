@@ -45,13 +45,13 @@ public class DbMigrationStateTest {
 
     final LegacyMessageSubscription subscriptionInCorrelation =
         createLegacyMessageSubscription(100, 1);
-    legacySubscriptionState.put(
+    legacySubscriptionState.upsert(
         subscriptionInCorrelation.getKey(), subscriptionInCorrelation.getRecord());
     legacySubscriptionState.updateSentTime(subscriptionInCorrelation, TEST_SENT_TIME);
 
     final LegacyMessageSubscription subscriptionNotInCorrelation =
         createLegacyMessageSubscription(101, 2);
-    legacySubscriptionState.put(
+    legacySubscriptionState.upsert(
         subscriptionNotInCorrelation.getKey(), subscriptionNotInCorrelation.getRecord());
     transactionContext.getCurrentTransaction().commit();
 
@@ -123,14 +123,14 @@ public class DbMigrationStateTest {
 
     final var openingProcessMessageSubscription =
         TestUtilities.createLegacyProcessMessageSubscription(100, 1);
-    legacySubscriptionState.put(
+    legacySubscriptionState.upsert(
         openingProcessMessageSubscription.getKey(),
         openingProcessMessageSubscription.getRecord(),
         TEST_SENT_TIME);
 
     final var openedProcessMessageSubscription =
         TestUtilities.createLegacyProcessMessageSubscription(101, 2);
-    legacySubscriptionState.put(
+    legacySubscriptionState.upsert(
         openedProcessMessageSubscription.getKey(),
         openedProcessMessageSubscription.getRecord(),
         TEST_SENT_TIME);
@@ -138,7 +138,7 @@ public class DbMigrationStateTest {
 
     final var closingProcessMessageSubscription =
         TestUtilities.createLegacyProcessMessageSubscription(102, 3);
-    legacySubscriptionState.put(
+    legacySubscriptionState.upsert(
         closingProcessMessageSubscription.getKey(),
         closingProcessMessageSubscription.getRecord(),
         TEST_SENT_TIME);

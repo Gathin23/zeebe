@@ -112,7 +112,7 @@ public final class StateControllerImplTest {
 
     // when
     wrapper.wrap(snapshotController.recover().join());
-    wrapper.putInt(key, value);
+    wrapper.upsertInt(key, value);
     final var tmpSnapshot = snapshotController.takeTransientSnapshot(snapshotPosition).join();
     tmpSnapshot.persist().join();
     snapshotController.close();
@@ -147,7 +147,7 @@ public final class StateControllerImplTest {
 
     // when
     wrapper.wrap(snapshotController.recover().join());
-    wrapper.putInt(key, value);
+    wrapper.upsertInt(key, value);
     takeSnapshot(snapshotPosition);
     snapshotController.close();
     wrapper.wrap(snapshotController.recover().join());
@@ -222,13 +222,13 @@ public final class StateControllerImplTest {
     final RocksDBWrapper wrapper = new RocksDBWrapper();
     wrapper.wrap(snapshotController.recover().join());
 
-    wrapper.putInt("x", 1);
+    wrapper.upsertInt("x", 1);
     takeSnapshot(1);
 
-    wrapper.putInt("x", 2);
+    wrapper.upsertInt("x", 2);
     takeSnapshot(2);
 
-    wrapper.putInt("x", 3);
+    wrapper.upsertInt("x", 3);
     takeSnapshot(3);
 
     snapshotController.close();
@@ -246,7 +246,7 @@ public final class StateControllerImplTest {
     final RocksDBWrapper wrapper = new RocksDBWrapper();
 
     wrapper.wrap(snapshotController.recover().join());
-    wrapper.putInt("x", 1);
+    wrapper.upsertInt("x", 1);
 
     takeSnapshot(1);
     snapshotController.close();

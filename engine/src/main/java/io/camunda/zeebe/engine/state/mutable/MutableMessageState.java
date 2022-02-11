@@ -13,7 +13,7 @@ import org.agrona.DirectBuffer;
 
 public interface MutableMessageState extends MessageState {
 
-  void put(long messageKey, MessageRecord message);
+  void create(long messageKey, MessageRecord message);
 
   void putMessageCorrelation(long messageKey, DirectBuffer bpmnProcessId);
 

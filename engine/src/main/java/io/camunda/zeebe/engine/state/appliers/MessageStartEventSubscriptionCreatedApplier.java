@@ -25,6 +25,6 @@ public final class MessageStartEventSubscriptionCreatedApplier
 
   @Override
   public void applyState(final long key, final MessageStartEventSubscriptionRecord value) {
-    subscriptionState.put(key, value);
+    subscriptionState.create(key, value);
   }
 }

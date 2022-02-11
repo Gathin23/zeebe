@@ -23,6 +23,6 @@ public final class MessagePublishedApplier
 
   @Override
   public void applyState(final long key, final MessageRecord value) {
-    messageState.put(key, value);
+    messageState.create(key, value);
   }
 }

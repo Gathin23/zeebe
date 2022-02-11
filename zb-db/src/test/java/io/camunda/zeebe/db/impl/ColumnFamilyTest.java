@@ -44,13 +44,13 @@ public final class ColumnFamilyTest {
   }
 
   @Test
-  public void shouldPutValue() {
+  public void shouldUpsertValue() {
     // given
     key.wrapLong(1213);
     value.wrapLong(255);
 
     // when
-    columnFamily.put(key, value);
+    columnFamily.upsert(key, value);
     value.wrapLong(221);
 
     // then
@@ -78,10 +78,10 @@ public final class ColumnFamilyTest {
   @Test
   public void shouldPutMultipleValues() {
     // given
-    putKeyValuePair(1213, 255);
+    upsertKeyValuePair(1213, 255);
 
     // when
-    putKeyValuePair(456789, 12345);
+    upsertKeyValuePair(456789, 12345);
     value.wrapLong(221);
 
     // then
@@ -101,11 +101,11 @@ public final class ColumnFamilyTest {
   @Test
   public void shouldPutAndGetMultipleValues() {
     // given
-    putKeyValuePair(1213, 255);
+    upsertKeyValuePair(1213, 255);
 
     // when
     DbLong longValue = columnFamily.get(key);
-    putKeyValuePair(456789, 12345);
+    upsertKeyValuePair(456789, 12345);
     value.wrapLong(221);
 
     // then
@@ -126,7 +126,7 @@ public final class ColumnFamilyTest {
   @Test
   public void shouldCheckForExistence() {
     // given
-    putKeyValuePair(1213, 255);
+    upsertKeyValuePair(1213, 255);
 
     // when
     final boolean exists = columnFamily.exists(key);
@@ -150,7 +150,7 @@ public final class ColumnFamilyTest {
   @Test
   public void shouldDelete() {
     // given
-    putKeyValuePair(1213, 255);
+    upsertKeyValuePair(1213, 255);
 
     // when
     columnFamily.delete(key);
@@ -166,7 +166,7 @@ public final class ColumnFamilyTest {
   @Test
   public void shouldNotDeleteDifferentKey() {
     // given
-    putKeyValuePair(1213, 255);
+    upsertKeyValuePair(1213, 255);
 
     // when
     key.wrapLong(700);
@@ -185,11 +185,11 @@ public final class ColumnFamilyTest {
   @Test
   public void shouldUseForeachValue() {
     // given
-    putKeyValuePair(4567, 123);
-    putKeyValuePair(6734, 921);
-    putKeyValuePair(1213, 255);
-    putKeyValuePair(1, Short.MAX_VALUE);
-    putKeyValuePair(Short.MAX_VALUE, 1);
+    upsertKeyValuePair(4567, 123);
+    upsertKeyValuePair(6734, 921);
+    upsertKeyValuePair(1213, 255);
+    upsertKeyValuePair(1, Short.MAX_VALUE);
+    upsertKeyValuePair(Short.MAX_VALUE, 1);
 
     // when
     final List<Long> values = new ArrayList<>();
@@ -202,11 +202,11 @@ public final class ColumnFamilyTest {
   @Test
   public void shouldUseForeachPair() {
     // given
-    putKeyValuePair(4567, 123);
-    putKeyValuePair(6734, 921);
-    putKeyValuePair(1213, 255);
-    putKeyValuePair(1, Short.MAX_VALUE);
-    putKeyValuePair(Short.MAX_VALUE, 1);
+    upsertKeyValuePair(4567, 123);
+    upsertKeyValuePair(6734, 921);
+    upsertKeyValuePair(1213, 255);
+    upsertKeyValuePair(1, Short.MAX_VALUE);
+    upsertKeyValuePair(Short.MAX_VALUE, 1);
 
     // when
     final List<Long> keys = new ArrayList<>();
@@ -225,11 +225,11 @@ public final class ColumnFamilyTest {
   @Test
   public void shouldDeleteOnForeachPair() {
     // given
-    putKeyValuePair(4567, 123);
-    putKeyValuePair(6734, 921);
-    putKeyValuePair(1213, 255);
-    putKeyValuePair(1, Short.MAX_VALUE);
-    putKeyValuePair(Short.MAX_VALUE, 1);
+    upsertKeyValuePair(4567, 123);
+    upsertKeyValuePair(6734, 921);
+    upsertKeyValuePair(1213, 255);
+    upsertKeyValuePair(1, Short.MAX_VALUE);
+    upsertKeyValuePair(Short.MAX_VALUE, 1);
 
     // when
     columnFamily.forEach((key, value) -> columnFamily.delete(key));
@@ -264,11 +264,11 @@ public final class ColumnFamilyTest {
   @Test
   public void shouldUseWhileTrue() {
     // given
-    putKeyValuePair(4567, 123);
-    putKeyValuePair(6734, 921);
-    putKeyValuePair(1213, 255);
-    putKeyValuePair(1, Short.MAX_VALUE);
-    putKeyValuePair(Short.MAX_VALUE, 1);
+    upsertKeyValuePair(4567, 123);
+    upsertKeyValuePair(6734, 921);
+    upsertKeyValuePair(1213, 255);
+    upsertKeyValuePair(1, Short.MAX_VALUE);
+    upsertKeyValuePair(Short.MAX_VALUE, 1);
 
     // when
     final List<Long> keys = new ArrayList<>();
@@ -289,11 +289,11 @@ public final class ColumnFamilyTest {
   @Test
   public void shouldDeleteWhileTrue() {
     // given
-    putKeyValuePair(4567, 123);
-    putKeyValuePair(6734, 921);
-    putKeyValuePair(1213, 255);
-    putKeyValuePair(1, Short.MAX_VALUE);
-    putKeyValuePair(Short.MAX_VALUE, 1);
+    upsertKeyValuePair(4567, 123);
+    upsertKeyValuePair(6734, 921);
+    upsertKeyValuePair(1213, 255);
+    upsertKeyValuePair(1, Short.MAX_VALUE);
+    upsertKeyValuePair(Short.MAX_VALUE, 1);
 
     // when
     columnFamily.whileTrue(
@@ -319,7 +319,7 @@ public final class ColumnFamilyTest {
   public void shouldCheckIfEmpty() {
     assertThat(columnFamily.isEmpty()).isTrue();
 
-    putKeyValuePair(1, 10);
+    upsertKeyValuePair(1, 10);
     assertThat(columnFamily.isEmpty()).isFalse();
 
     columnFamily.delete(key);
@@ -356,9 +356,9 @@ public final class ColumnFamilyTest {
         .isInstanceOf(IllegalStateException.class);
   }
 
-  private void putKeyValuePair(final int key, final int value) {
+  private void upsertKeyValuePair(final int key, final int value) {
     this.key.wrapLong(key);
     this.value.wrapLong(value);
-    columnFamily.put(this.key, this.value);
+    columnFamily.upsert(this.key, this.value);
   }
 }

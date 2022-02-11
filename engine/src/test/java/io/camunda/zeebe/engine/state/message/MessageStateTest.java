@@ -39,7 +39,7 @@ public final class MessageStateTest {
   public void shouldNotExistIfNameDoesntMatch() {
     // given
     final var message = createMessage("name", "correlationKey", "{}", "id");
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     // when
     final boolean exist =
@@ -53,7 +53,7 @@ public final class MessageStateTest {
   public void shouldNotExistIfCorrelationKeyDoesntMatch() {
     // given
     final var message = createMessage("name", "correlationKey", "{}", "id");
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     // when
     final boolean exist =
@@ -67,7 +67,7 @@ public final class MessageStateTest {
   public void shouldNotExistIfMessageIdDoesntMatch() {
     // given
     final var message = createMessage("name", "correlationKey", "{}", "id");
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     // when
     final boolean exist =
@@ -82,7 +82,7 @@ public final class MessageStateTest {
   public void shouldExist() {
     // given
     final var message = createMessage("name", "correlationKey", "{}", "id");
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     // when
     final boolean exist =
@@ -96,7 +96,7 @@ public final class MessageStateTest {
   public void shouldVisitMessages() {
     // given
     final var message = createMessage("name", "correlationKey");
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     // when
     final List<StoredMessage> messages = new ArrayList<>();
@@ -114,10 +114,10 @@ public final class MessageStateTest {
   public void shouldVisitMessagesInOrder() {
     // given
     final var message = createMessage("name", "correlationKey");
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     final var message2 = createMessage("name", "correlationKey");
-    messageState.put(2L, message2);
+    messageState.create(2L, message2);
 
     // when
     final List<Long> keys = new ArrayList<>();
@@ -132,10 +132,10 @@ public final class MessageStateTest {
   public void shouldVisitMessagesUntilStop() {
     // given
     final var message = createMessage("name", "correlationKey");
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     final var message2 = createMessage("name", "correlationKey");
-    messageState.put(2L, message2);
+    messageState.create(2L, message2);
 
     // when
     final List<Long> keys = new ArrayList<>();
@@ -155,7 +155,7 @@ public final class MessageStateTest {
   public void shouldNotVisitMessagesIfNameDoesntMatch() {
     // given
     final var message = createMessage("name", "correlationKey");
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     // when
     final List<Long> keys = new ArrayList<>();
@@ -170,7 +170,7 @@ public final class MessageStateTest {
   public void shouldNotVisitMessageIfCorrelationKeyDoesntMatch() {
     // given
     final var message = createMessage("name", "correlationKey");
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     // when
     final List<Long> keys = new ArrayList<>();
@@ -187,8 +187,8 @@ public final class MessageStateTest {
     final var message = createMessage("name", "correlationKey", "{}", "nr1", 1234);
     final var message2 = createMessage("name", "correlationKey", "{}", "nr2", 4567);
 
-    messageState.put(1L, message);
-    messageState.put(2L, message2);
+    messageState.create(1L, message);
+    messageState.create(2L, message2);
 
     // then
     final List<StoredMessage> readMessage = new ArrayList<>();
@@ -203,8 +203,8 @@ public final class MessageStateTest {
     final var message = createMessage("name", "correlationKey", "{}", "nr1", 1234);
     final var message2 = createMessage("otherName", "correlationKey", "{}", "nr2", 2000);
 
-    messageState.put(1L, message);
-    messageState.put(2L, message2);
+    messageState.create(1L, message);
+    messageState.create(2L, message2);
 
     // then
     final List<StoredMessage> readMessage = new ArrayList<>();
@@ -222,8 +222,8 @@ public final class MessageStateTest {
     final var message = createMessage("name", "correlationKey", "{}", "nr1", 1234);
     final var message2 = createMessage("name", "correlationKey", "{}", "nr1", 2000);
 
-    messageState.put(1L, message);
-    messageState.put(2L, message2);
+    messageState.create(1L, message);
+    messageState.create(2L, message2);
 
     // when
     final long deadline = now + 3_000L;
@@ -240,7 +240,7 @@ public final class MessageStateTest {
   public void shouldRemoveMessage() {
     // given
     final var message = createMessage("name", "correlationKey", "{}", "id", 1234);
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     messageState.putMessageCorrelation(1L, wrapString("a"));
     messageState.putMessageCorrelation(1L, wrapString("b"));
@@ -277,7 +277,7 @@ public final class MessageStateTest {
     // given
     final var message = createMessage("name", "correlationKey");
 
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     // when
     messageState.remove(1L);
@@ -301,7 +301,7 @@ public final class MessageStateTest {
     // given
     final var message = createMessage("name", "correlationKey", "{}", "id", 1234);
 
-    messageState.put(1L, message);
+    messageState.create(1L, message);
 
     // when
     messageState.remove(1L);
@@ -333,8 +333,8 @@ public final class MessageStateTest {
     final var message = createMessage("name", "correlationKey", "{}", "id1", 1234);
     final var message2 = createMessage("name", "correlationKey", "{}", "id2", 4567);
 
-    messageState.put(1L, message);
-    messageState.put(2L, message2);
+    messageState.create(1L, message);
+    messageState.create(2L, message2);
 
     messageState.putMessageCorrelation(1L, wrapString("a"));
     messageState.putMessageCorrelation(2L, wrapString("b"));

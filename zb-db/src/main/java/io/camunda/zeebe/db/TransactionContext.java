@@ -11,8 +11,8 @@ package io.camunda.zeebe.db;
 public interface TransactionContext {
 
   /**
-   * Runs the commands like delete, put etc. in a transaction. Access of different column families
-   * inside this transaction are possible.
+   * Runs the commands like delete, insert etc. in a transaction. Access of different column
+   * families inside this transaction are possible.
    *
    * <p>Reading key-value pairs via get or an iterator is also possible and will reflect changes,
    * which are made during the transaction.

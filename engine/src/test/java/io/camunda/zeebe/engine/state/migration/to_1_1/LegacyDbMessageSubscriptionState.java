@@ -88,16 +88,16 @@ final class LegacyDbMessageSubscriptionState {
     return subscriptionColumnFamily.get(elementKeyAndMessageName);
   }
 
-  public void put(final long key, final MessageSubscriptionRecord record) {
+  public void upsert(final long key, final MessageSubscriptionRecord record) {
     elementInstanceKey.wrapLong(record.getElementInstanceKey());
     messageName.wrapBuffer(record.getMessageNameBuffer());
 
     messageSubscription.setKey(key).setRecord(record).setCommandSentTime(0);
 
-    subscriptionColumnFamily.put(elementKeyAndMessageName, messageSubscription);
+    subscriptionColumnFamily.upsert(elementKeyAndMessageName, messageSubscription);
 
     correlationKey.wrapBuffer(record.getCorrelationKeyBuffer());
-    messageNameAndCorrelationKeyColumnFamily.put(
+    messageNameAndCorrelationKeyColumnFamily.upsert(
         nameCorrelationAndElementInstanceKey, DbNil.INSTANCE);
   }
   /*
@@ -172,11 +172,11 @@ final class LegacyDbMessageSubscriptionState {
     removeSubscriptionFromSentTimeColumnFamily(subscription);
 
     subscription.setCommandSentTime(sentTime);
-    subscriptionColumnFamily.put(elementKeyAndMessageName, subscription);
+    subscriptionColumnFamily.upsert(elementKeyAndMessageName, subscription);
 
     if (sentTime > 0) {
       this.sentTime.wrapLong(subscription.getCommandSentTime());
-      sentTimeColumnFamily.put(sentTimeCompositeKey, DbNil.INSTANCE);
+      sentTimeColumnFamily.upsert(sentTimeCompositeKey, DbNil.INSTANCE);
     }
   }
   /*

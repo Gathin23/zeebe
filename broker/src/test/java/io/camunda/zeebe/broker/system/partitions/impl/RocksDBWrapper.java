@@ -32,14 +32,9 @@ public final class RocksDBWrapper {
     return zbLong != null ? (int) zbLong.getValue() : -1;
   }
 
-  public void putInt(final String key, final int value) {
+  public void upsertInt(final String key, final int value) {
     this.key.wrapString(key);
     this.value.wrapLong(value);
-    defaultColumnFamily.put(this.key, this.value);
-  }
-
-  public boolean mayExist(final String key) {
-    this.key.wrapString(key);
-    return defaultColumnFamily.exists(this.key);
+    defaultColumnFamily.upsert(this.key, this.value);
   }
 }

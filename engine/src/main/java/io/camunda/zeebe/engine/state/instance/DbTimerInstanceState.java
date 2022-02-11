@@ -54,14 +54,24 @@ public final class DbTimerInstanceState implements MutableTimerInstanceState {
   }
 
   @Override
-  public void put(final TimerInstance timer) {
+  public void create(final TimerInstance timer) {
     timerKey.wrapLong(timer.getKey());
     elementInstanceKey.wrapLong(timer.getElementInstanceKey());
 
-    timerInstanceColumnFamily.put(elementAndTimerKey, timer);
+    timerInstanceColumnFamily.insert(elementAndTimerKey, timer);
 
     dueDateKey.wrapLong(timer.getDueDate());
-    dueDateColumnFamily.put(dueDateCompositeKey, DbNil.INSTANCE);
+    dueDateColumnFamily.insert(dueDateCompositeKey, DbNil.INSTANCE);
+  }
+
+  @Override
+  public void remove(final TimerInstance timer) {
+    elementInstanceKey.wrapLong(timer.getElementInstanceKey());
+    timerKey.wrapLong(timer.getKey());
+    timerInstanceColumnFamily.delete(elementAndTimerKey);
+
+    dueDateKey.wrapLong(timer.getDueDate());
+    dueDateColumnFamily.delete(dueDateCompositeKey);
   }
 
   @Override
@@ -106,15 +116,5 @@ public final class DbTimerInstanceState implements MutableTimerInstanceState {
     this.timerKey.wrapLong(timerKey);
 
     return timerInstanceColumnFamily.get(elementAndTimerKey);
-  }
-
-  @Override
-  public void remove(final TimerInstance timer) {
-    elementInstanceKey.wrapLong(timer.getElementInstanceKey());
-    timerKey.wrapLong(timer.getKey());
-    timerInstanceColumnFamily.delete(elementAndTimerKey);
-
-    dueDateKey.wrapLong(timer.getDueDate());
-    dueDateColumnFamily.delete(dueDateCompositeKey);
   }
 }

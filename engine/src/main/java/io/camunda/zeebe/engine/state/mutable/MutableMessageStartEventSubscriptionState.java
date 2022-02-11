@@ -14,7 +14,7 @@ import org.agrona.DirectBuffer;
 public interface MutableMessageStartEventSubscriptionState
     extends MessageStartEventSubscriptionState {
 
-  void put(final long key, MessageStartEventSubscriptionRecord subscription);
+  void create(final long key, MessageStartEventSubscriptionRecord subscription);
 
   void remove(long processDefinitionKey, DirectBuffer messageName);
 }

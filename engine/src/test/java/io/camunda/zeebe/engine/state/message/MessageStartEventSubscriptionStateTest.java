@@ -40,7 +40,7 @@ public final class MessageStartEventSubscriptionStateTest {
   public void shouldExistAfterPut() {
     final MessageStartEventSubscriptionRecord subscription =
         createSubscription("messageName", "startEventID", 1);
-    state.put(1L, subscription);
+    state.create(1L, subscription);
     assertThat(state.exists(subscription)).isTrue();
   }
 
@@ -48,7 +48,7 @@ public final class MessageStartEventSubscriptionStateTest {
   public void shouldNotExistForDifferentKey() {
     final MessageStartEventSubscriptionRecord subscription =
         createSubscription("messageName", "startEventID", 1);
-    state.put(1L, subscription);
+    state.create(1L, subscription);
 
     subscription.setProcessDefinitionKey(2);
     assertThat(state.exists(subscription)).isFalse();
@@ -61,7 +61,7 @@ public final class MessageStartEventSubscriptionStateTest {
         createSubscription("messageName", "startEventID", 1);
 
     // then
-    state.put(1L, subscription);
+    state.create(1L, subscription);
 
     // when
     final var storedSubscription = new MutableReference<MessageStartEventSubscription>();
@@ -77,21 +77,21 @@ public final class MessageStartEventSubscriptionStateTest {
   public void shouldVisitForMessageNames() {
     final MessageStartEventSubscriptionRecord subscription1 =
         createSubscription("message", "startEvent1", 1);
-    state.put(1L, subscription1);
+    state.create(1L, subscription1);
 
     // more subscriptions for same message
     final MessageStartEventSubscriptionRecord subscription2 =
         createSubscription("message", "startEvent2", 2);
-    state.put(2L, subscription2);
+    state.create(2L, subscription2);
 
     final MessageStartEventSubscriptionRecord subscription3 =
         createSubscription("message", "startEvent3", 3);
-    state.put(3L, subscription3);
+    state.create(3L, subscription3);
 
     // should not visit other message
     final MessageStartEventSubscriptionRecord subscription4 =
         createSubscription("message-other", "startEvent4", 3);
-    state.put(4L, subscription4);
+    state.create(4L, subscription4);
 
     final List<String> visitedStartEvents = new ArrayList<>();
 
@@ -110,17 +110,17 @@ public final class MessageStartEventSubscriptionStateTest {
   public void shouldVisitForProcessDefinitionKey() {
     final MessageStartEventSubscriptionRecord subscription1 =
         createSubscription("message1", "startEvent1", 1);
-    state.put(1L, subscription1);
+    state.create(1L, subscription1);
 
     // more subscriptions for same process definition
     final MessageStartEventSubscriptionRecord subscription2 =
         createSubscription("message2", "startEvent2", 1);
-    state.put(2L, subscription2);
+    state.create(2L, subscription2);
 
     // should not visit with other process definition
     final MessageStartEventSubscriptionRecord subscription3 =
         createSubscription("message3", "startEvent3", 2);
-    state.put(3L, subscription3);
+    state.create(3L, subscription3);
 
     final List<Tuple> visitedSubscriptions = new ArrayList<>();
 
@@ -140,11 +140,11 @@ public final class MessageStartEventSubscriptionStateTest {
   public void shouldNotExistAfterRemove() {
     final MessageStartEventSubscriptionRecord subscription1 =
         createSubscription("message1", "startEvent1", 1);
-    state.put(1L, subscription1);
+    state.create(1L, subscription1);
 
     final MessageStartEventSubscriptionRecord subscription2 =
         createSubscription("message2", "startEvent2", 2);
-    state.put(2L, subscription2);
+    state.create(2L, subscription2);
 
     state.remove(1L, wrapString("message1"));
     state.remove(2L, wrapString("message2"));
@@ -157,15 +157,15 @@ public final class MessageStartEventSubscriptionStateTest {
   public void shouldNotRemoveOtherSubscriptions() {
     final MessageStartEventSubscriptionRecord subscription1 =
         createSubscription("message1", "startEvent1", 1);
-    state.put(1L, subscription1);
+    state.create(1L, subscription1);
 
     final MessageStartEventSubscriptionRecord subscription2 =
         createSubscription("message2", "startEvent2", 1);
-    state.put(2L, subscription2);
+    state.create(2L, subscription2);
 
     final MessageStartEventSubscriptionRecord subscription3 =
         createSubscription("message1", "startEvent1", 2);
-    state.put(3L, subscription3);
+    state.create(3L, subscription3);
 
     state.remove(1L, wrapString("message1"));
 
@@ -182,7 +182,7 @@ public final class MessageStartEventSubscriptionStateTest {
         createSubscription("msg", "start", key);
 
     // when
-    state.put(key, writtenRecord);
+    state.create(key, writtenRecord);
     writtenRecord.setMessageName(BufferUtil.wrapString("foo"));
 
     // then

@@ -33,12 +33,12 @@ public class LegacyDbTemporaryVariablesState {
             temporaryVariables);
   }
 
-  public void put(final long key, final DirectBuffer variables) {
+  public void upsert(final long key, final DirectBuffer variables) {
     temporaryVariables.reset();
     temporaryVariables.set(variables);
     temporaryVariablesKeyInstance.wrapLong(key);
 
-    temporaryVariableColumnFamily.put(temporaryVariablesKeyInstance, temporaryVariables);
+    temporaryVariableColumnFamily.upsert(temporaryVariablesKeyInstance, temporaryVariables);
   }
 
   public boolean isEmpty() {

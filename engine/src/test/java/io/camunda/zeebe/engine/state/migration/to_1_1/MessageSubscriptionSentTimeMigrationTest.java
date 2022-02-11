@@ -98,7 +98,7 @@ public class MessageSubscriptionSentTimeMigrationTest {
 
       final LegacyMessageSubscription subscriptionInCorrelation =
           TestUtilities.createLegacyMessageSubscription(100, 1);
-      legacySubscriptionState.put(
+      legacySubscriptionState.upsert(
           subscriptionInCorrelation.getKey(), subscriptionInCorrelation.getRecord());
       legacySubscriptionState.updateSentTime(subscriptionInCorrelation, TEST_SENT_TIME);
     }

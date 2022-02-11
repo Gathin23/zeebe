@@ -100,7 +100,7 @@ public class ProcessMessageSubscriptionSentTimeMigrationTest {
 
       final var openingProcessMessageSubscription =
           TestUtilities.createLegacyProcessMessageSubscription(100, 1);
-      legacySubscriptionState.put(
+      legacySubscriptionState.upsert(
           openingProcessMessageSubscription.getKey(),
           openingProcessMessageSubscription.getRecord(),
           TEST_SENT_TIME);
