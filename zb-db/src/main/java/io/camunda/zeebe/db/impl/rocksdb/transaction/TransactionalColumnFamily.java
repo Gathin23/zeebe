@@ -47,16 +47,9 @@ class TransactionalColumnFamily<
     columnFamilyContext = new ColumnFamilyContext(columnFamily.ordinal());
   }
 
-  private void ensureInOpenTransaction(
-      final TransactionContext context, final TransactionConsumer operation) {
-    context.runInTransaction(
-        () -> operation.run((ZeebeTransaction) context.getCurrentTransaction()));
-  }
-
   @Override
   public void put(final KeyType key, final ValueType value) {
     ensureInOpenTransaction(
-        context,
         transaction -> {
           columnFamilyContext.writeKey(key);
           columnFamilyContext.writeValue(value);
@@ -72,7 +65,6 @@ class TransactionalColumnFamily<
   @Override
   public void insert(final KeyType key, final ValueType value) {
     ensureInOpenTransaction(
-        context,
         transaction -> {
           columnFamilyContext.writeKey(key);
           columnFamilyContext.writeValue(value);
@@ -90,7 +82,6 @@ class TransactionalColumnFamily<
   @Override
   public void update(final KeyType key, final ValueType value) {
     ensureInOpenTransaction(
-        context,
         transaction -> {
           columnFamilyContext.writeKey(key);
           columnFamilyContext.writeValue(value);
@@ -108,7 +99,6 @@ class TransactionalColumnFamily<
   @Override
   public void upsert(final KeyType key, final ValueType value) {
     ensureInOpenTransaction(
-        context,
         transaction -> {
           columnFamilyContext.writeKey(key);
           columnFamilyContext.writeValue(value);
@@ -123,8 +113,18 @@ class TransactionalColumnFamily<
 
   @Override
   public ValueType get(final KeyType key) {
-    columnFamilyContext.writeKey(key);
-    final DirectBuffer valueBuffer = getValue(context, columnFamilyContext);
+    ensureInOpenTransaction(
+        transaction -> {
+          columnFamilyContext.writeKey(key);
+          final byte[] value =
+              transaction.get(
+                  transactionDb.getDefaultNativeHandle(),
+                  transactionDb.getReadOptionsNativeHandle(),
+                  columnFamilyContext.getKeyBufferArray(),
+                  columnFamilyContext.getKeyLength());
+          columnFamilyContext.wrapValueView(value);
+        });
+    final var valueBuffer = columnFamilyContext.getValueView();
     if (valueBuffer != null) {
       valueInstance.wrap(valueBuffer, 0, valueBuffer.capacity());
       return valueInstance;
@@ -134,41 +134,62 @@ class TransactionalColumnFamily<
 
   @Override
   public void forEach(final Consumer<ValueType> consumer) {
-    forEach(context, consumer);
+    ensureInOpenTransaction(
+        transaction ->
+            forEachInPrefix(
+                new DbNullKey(),
+                (k1, v1) -> {
+                  consumer.accept(v1);
+                  return true;
+                }));
   }
 
   @Override
   public void forEach(final BiConsumer<KeyType, ValueType> consumer) {
-    forEach(context, consumer);
+    ensureInOpenTransaction(
+        transaction ->
+            forEachInPrefix(
+                new DbNullKey(),
+                (k, v) -> {
+                  consumer.accept(k, v);
+                  return true;
+                }));
   }
 
   @Override
   public void whileTrue(final KeyValuePairVisitor<KeyType, ValueType> visitor) {
-    whileTrue(context, visitor);
+    ensureInOpenTransaction(transaction -> forEachInPrefix(new DbNullKey(), visitor));
   }
 
   @Override
   public void whileEqualPrefix(
       final DbKey keyPrefix, final BiConsumer<KeyType, ValueType> visitor) {
-    whileEqualPrefix(context, keyPrefix, visitor);
+    ensureInOpenTransaction(
+        transaction ->
+            forEachInPrefix(
+                keyPrefix,
+                (k, v) -> {
+                  visitor.accept(k, v);
+                  return true;
+                }));
   }
 
   @Override
   public void whileEqualPrefix(
       final DbKey keyPrefix, final KeyValuePairVisitor<KeyType, ValueType> visitor) {
-    whileEqualPrefix(context, keyPrefix, visitor);
+    ensureInOpenTransaction(transaction -> forEachInPrefix(keyPrefix, visitor));
   }
 
   @Override
   public void delete(final KeyType key) {
-    columnFamilyContext.writeKey(key);
     ensureInOpenTransaction(
-        context,
-        transaction ->
-            transaction.delete(
-                transactionDb.getDefaultNativeHandle(),
-                columnFamilyContext.getKeyBufferArray(),
-                columnFamilyContext.getKeyLength()));
+        transaction -> {
+          columnFamilyContext.writeKey(key);
+          transaction.delete(
+              transactionDb.getDefaultNativeHandle(),
+              columnFamilyContext.getKeyBufferArray(),
+              columnFamilyContext.getKeyLength());
+        });
   }
 
   @Override
@@ -186,12 +207,16 @@ class TransactionalColumnFamily<
 
   @Override
   public boolean exists(final KeyType key) {
-    columnFamilyContext.wrapValueView(new byte[0]);
     ensureInOpenTransaction(
-        context,
         transaction -> {
           columnFamilyContext.writeKey(key);
-          getValue(context, columnFamilyContext);
+          final byte[] value =
+              transaction.get(
+                  transactionDb.getDefaultNativeHandle(),
+                  transactionDb.getReadOptionsNativeHandle(),
+                  columnFamilyContext.getKeyBufferArray(),
+                  columnFamilyContext.getKeyLength());
+          columnFamilyContext.wrapValueView(value);
         });
     return !columnFamilyContext.isValueViewEmpty();
   }
@@ -199,14 +224,15 @@ class TransactionalColumnFamily<
   @Override
   public boolean isEmpty() {
     final AtomicBoolean isEmpty = new AtomicBoolean(true);
-    whileEqualPrefix(
-        context,
-        keyInstance,
-        valueInstance,
-        (key, value) -> {
-          isEmpty.set(false);
-          return false;
-        });
+    ensureInOpenTransaction(
+        transaction ->
+            forEachInPrefix(
+                new DbNullKey(),
+                (key, value) -> {
+                  isEmpty.set(false);
+                  return false;
+                }));
+
     return isEmpty.get();
   }
 
@@ -234,106 +260,14 @@ class TransactionalColumnFamily<
     }
   }
 
-  private DirectBuffer getValue(
-      final TransactionContext context, final ColumnFamilyContext columnFamilyContext) {
-    ensureInOpenTransaction(
-        context,
-        transaction -> {
-          final byte[] value =
-              transaction.get(
-                  transactionDb.getDefaultNativeHandle(),
-                  transactionDb.getReadOptionsNativeHandle(),
-                  columnFamilyContext.getKeyBufferArray(),
-                  columnFamilyContext.getKeyLength());
-          columnFamilyContext.wrapValueView(value);
-        });
-    return columnFamilyContext.getValueView();
-  }
-
-  public void forEach(final TransactionContext context, final Consumer<ValueType> consumer) {
-    whileEqualPrefix(
-        context,
-        keyInstance,
-        valueInstance,
-        (BiConsumer<KeyType, ValueType>) (ignore, value) -> consumer.accept(value));
-  }
-
-  public void forEach(
-      final TransactionContext context, final BiConsumer<KeyType, ValueType> consumer) {
-    whileEqualPrefix(context, keyInstance, valueInstance, consumer);
-  }
-
-  public void whileTrue(
-      final TransactionContext context, final KeyValuePairVisitor<KeyType, ValueType> visitor) {
-    whileEqualPrefix(context, keyInstance, valueInstance, visitor);
-  }
-
-  public void whileEqualPrefix(
-      final TransactionContext context,
-      final DbKey keyPrefix,
-      final BiConsumer<KeyType, ValueType> visitor) {
-    whileEqualPrefix(context, keyPrefix, keyInstance, valueInstance, visitor);
-  }
-
-  public void whileEqualPrefix(
-      final TransactionContext context,
-      final DbKey keyPrefix,
-      final KeyValuePairVisitor<KeyType, ValueType> visitor) {
-    whileEqualPrefix(context, keyPrefix, keyInstance, valueInstance, visitor);
+  private void ensureInOpenTransaction(final TransactionConsumer operation) {
+    context.runInTransaction(
+        () -> operation.run((ZeebeTransaction) context.getCurrentTransaction()));
   }
 
   RocksIterator newIterator(final TransactionContext context, final ReadOptions options) {
     final var currentTransaction = (ZeebeTransaction) context.getCurrentTransaction();
     return currentTransaction.newIterator(options, transactionDb.getDefaultHandle());
-  }
-
-  protected <KeyType extends DbKey, ValueType extends DbValue> void whileEqualPrefix(
-      final TransactionContext context,
-      final DbKey prefix,
-      final KeyType keyInstance,
-      final ValueType valueInstance,
-      final BiConsumer<KeyType, ValueType> visitor) {
-    whileEqualPrefix(
-        context,
-        prefix,
-        keyInstance,
-        valueInstance,
-        (k, v) -> {
-          visitor.accept(k, v);
-          return true;
-        });
-  }
-
-  /**
-   * This method is used mainly from other iterator methods to iterate over column family entries,
-   * which are prefixed with column family key.
-   */
-  protected <KeyType extends DbKey, ValueType extends DbValue> void whileEqualPrefix(
-      final TransactionContext context,
-      final KeyType keyInstance,
-      final ValueType valueInstance,
-      final BiConsumer<KeyType, ValueType> visitor) {
-    whileEqualPrefix(
-        context,
-        new DbNullKey(),
-        keyInstance,
-        valueInstance,
-        (k, v) -> {
-          visitor.accept(k, v);
-          return true;
-        });
-  }
-
-  /**
-   * This method is used mainly from other iterator methods to iterate over column family entries,
-   * which are prefixed with column family key.
-   */
-  protected <KeyType extends DbKey, ValueType extends DbValue> void whileEqualPrefix(
-      final TransactionContext context,
-      final KeyType keyInstance,
-      final ValueType valueInstance,
-      final KeyValuePairVisitor<KeyType, ValueType> visitor) {
-    whileEqualPrefix(context, new DbNullKey(), keyInstance, valueInstance, visitor);
   }
 
   /**
@@ -345,42 +279,35 @@ class TransactionalColumnFamily<
    *
    * <p>While iterating over subsequent keys we have to validate it.
    */
-  protected <KeyType extends DbKey, ValueType extends DbValue> void whileEqualPrefix(
-      final TransactionContext context,
-      final DbKey prefix,
-      final KeyType keyInstance,
-      final ValueType valueInstance,
-      final KeyValuePairVisitor<KeyType, ValueType> visitor) {
+  private void forEachInPrefix(
+      final DbKey prefix, final KeyValuePairVisitor<KeyType, ValueType> visitor) {
     columnFamilyContext.withPrefixKey(
         prefix,
-        (prefixKey, prefixLength) ->
-            ensureInOpenTransaction(
-                context,
-                transaction -> {
-                  try (final RocksIterator iterator =
-                      newIterator(context, transactionDb.getPrefixReadOptions())) {
+        (prefixKey, prefixLength) -> {
+          try (final RocksIterator iterator =
+              newIterator(context, transactionDb.getPrefixReadOptions())) {
 
-                    boolean shouldVisitNext = true;
+            boolean shouldVisitNext = true;
 
-                    for (RocksDbInternal.seek(
-                            iterator,
-                            ZeebeTransactionDb.getNativeHandle(iterator),
-                            prefixKey,
-                            prefixLength);
-                        iterator.isValid() && shouldVisitNext;
-                        iterator.next()) {
-                      final byte[] keyBytes = iterator.key();
-                      if (!startsWith(prefixKey, 0, prefixLength, keyBytes, 0, keyBytes.length)) {
-                        break;
-                      }
+            for (RocksDbInternal.seek(
+                    iterator,
+                    ZeebeTransactionDb.getNativeHandle(iterator),
+                    prefixKey,
+                    prefixLength);
+                iterator.isValid() && shouldVisitNext;
+                iterator.next()) {
+              final byte[] keyBytes = iterator.key();
+              if (!startsWith(prefixKey, 0, prefixLength, keyBytes, 0, keyBytes.length)) {
+                break;
+              }
 
-                      shouldVisitNext = visit(keyInstance, valueInstance, visitor, iterator);
-                    }
-                  }
-                }));
+              shouldVisitNext = visit(keyInstance, valueInstance, visitor, iterator);
+            }
+          }
+        });
   }
 
-  private <KeyType extends DbKey, ValueType extends DbValue> boolean visit(
+  private boolean visit(
       final KeyType keyInstance,
       final ValueType valueInstance,
       final KeyValuePairVisitor<KeyType, ValueType> iteratorConsumer,
