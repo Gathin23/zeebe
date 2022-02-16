@@ -172,6 +172,19 @@ class TransactionalColumnFamily<
   }
 
   @Override
+  public void deleteExisting(final KeyType key) {
+    ensureInOpenTransaction(
+        transaction -> {
+          columnFamilyContext.writeKey(key);
+          assertExists(transaction);
+          transaction.delete(
+              transactionDb.getDefaultNativeHandle(),
+              columnFamilyContext.getKeyBufferArray(),
+              columnFamilyContext.getKeyLength());
+        });
+  }
+
+  @Override
   public boolean exists(final KeyType key) {
     columnFamilyContext.wrapValueView(new byte[0]);
     ensureInOpenTransaction(

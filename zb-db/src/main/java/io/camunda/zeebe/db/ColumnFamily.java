@@ -120,6 +120,13 @@ public interface ColumnFamily<KeyType extends DbKey, ValueType extends DbValue> 
   void delete(KeyType key);
 
   /**
+   * Deletes the key-value pair with the given key if it exists in the column family
+   *
+   * @throws IllegalStateException if the key does not exist
+   */
+  void deleteExisting(KeyType key);
+
+  /**
    * Checks for key existence in the column family.
    *
    * @param key the key to look for
