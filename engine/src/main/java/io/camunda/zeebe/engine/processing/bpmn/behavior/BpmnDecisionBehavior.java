@@ -61,7 +61,7 @@ public final class BpmnDecisionBehavior {
     final var scopeKey = context.getElementInstanceKey();
 
     final var resultOrFailure =
-        findDrgInState(element)
+        findDrgInState(element, scopeKey)
             .flatMap(drg -> evaluateDecisionInDrg(drg, element.getDecisionId(), scopeKey));
 
     // The output mapping behavior determines what to do with the decision result. Since the output
@@ -73,14 +73,12 @@ public final class BpmnDecisionBehavior {
         result ->
             triggerProcessEventWithResultVariable(context, element.getResultVariable(), result));
 
-    // the failure must have the correct error type and scope, and we only want to declare this once
-    return resultOrFailure.mapLeft(
-        failure -> new Failure(failure.getMessage(), ErrorType.CALLED_ELEMENT_ERROR, scopeKey));
+    return resultOrFailure;
   }
 
   // todo(#8571): avoid parsing drg every time
   private Either<Failure, ParsedDecisionRequirementsGraph> findDrgInState(
-      final ExecutableCalledDecision element) {
+      final ExecutableCalledDecision element, final long scopeKey) {
     return findDecisionById(element.getDecisionId())
         .flatMap(this::findDrgByDecision)
         .mapLeft(
@@ -88,7 +86,9 @@ public final class BpmnDecisionBehavior {
                 new Failure(
                     "Expected to evaluate decision id '%s', but %s"
                         .formatted(element.getDecisionId(), failure.getMessage())))
-        .flatMap(drg -> parseDrg(drg.getResource()));
+        .flatMap(drg -> parseDrg(drg.getResource()))
+        // the failure must have the correct error type and scope, we only want to declare this once
+        .mapLeft(f -> new Failure(f.getMessage(), ErrorType.CALLED_ELEMENT_ERROR, scopeKey));
   }
 
   private Either<Failure, PersistedDecision> findDecisionById(final String decisionId) {
@@ -126,7 +126,8 @@ public final class BpmnDecisionBehavior {
     final var evaluationContext = new VariablesContext(MsgPackConverter.convertToMap(variables));
     final var result = decisionEngine.evaluateDecisionById(drg, decisionId, evaluationContext);
     if (result.isFailure()) {
-      return Either.left(new Failure(result.getFailureMessage()));
+      return Either.left(
+          new Failure(result.getFailureMessage(), ErrorType.CALLED_ELEMENT_ERROR, scopeKey));
     } else {
       return Either.right(result);
     }
