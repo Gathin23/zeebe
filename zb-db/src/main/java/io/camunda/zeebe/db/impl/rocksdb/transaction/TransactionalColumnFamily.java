@@ -60,7 +60,58 @@ class TransactionalColumnFamily<
         transaction -> {
           columnFamilyContext.writeKey(key);
           columnFamilyContext.writeValue(value);
+          transaction.put(
+              transactionDb.getDefaultNativeHandle(),
+              columnFamilyContext.getKeyBufferArray(),
+              columnFamilyContext.getKeyLength(),
+              columnFamilyContext.getValueBufferArray(),
+              value.getLength());
+        });
+  }
 
+  @Override
+  public void insert(final KeyType key, final ValueType value) {
+    ensureInOpenTransaction(
+        context,
+        transaction -> {
+          columnFamilyContext.writeKey(key);
+          columnFamilyContext.writeValue(value);
+
+          assertDoesNotExist(transaction);
+          transaction.put(
+              transactionDb.getDefaultNativeHandle(),
+              columnFamilyContext.getKeyBufferArray(),
+              columnFamilyContext.getKeyLength(),
+              columnFamilyContext.getValueBufferArray(),
+              value.getLength());
+        });
+  }
+
+  @Override
+  public void update(final KeyType key, final ValueType value) {
+    ensureInOpenTransaction(
+        context,
+        transaction -> {
+          columnFamilyContext.writeKey(key);
+          columnFamilyContext.writeValue(value);
+
+          assertExists(transaction);
+          transaction.put(
+              transactionDb.getDefaultNativeHandle(),
+              columnFamilyContext.getKeyBufferArray(),
+              columnFamilyContext.getKeyLength(),
+              columnFamilyContext.getValueBufferArray(),
+              value.getLength());
+        });
+  }
+
+  @Override
+  public void upsert(final KeyType key, final ValueType value) {
+    ensureInOpenTransaction(
+        context,
+        transaction -> {
+          columnFamilyContext.writeKey(key);
+          columnFamilyContext.writeValue(value);
           transaction.put(
               transactionDb.getDefaultNativeHandle(),
               columnFamilyContext.getKeyBufferArray(),
@@ -79,22 +130,6 @@ class TransactionalColumnFamily<
       return valueInstance;
     }
     return null;
-  }
-
-  private DirectBuffer getValue(
-      final TransactionContext context, final ColumnFamilyContext columnFamilyContext) {
-    ensureInOpenTransaction(
-        context,
-        transaction -> {
-          final byte[] value =
-              transaction.get(
-                  transactionDb.getDefaultNativeHandle(),
-                  transactionDb.getReadOptionsNativeHandle(),
-                  columnFamilyContext.getKeyBufferArray(),
-                  columnFamilyContext.getKeyLength());
-          columnFamilyContext.wrapValueView(value);
-        });
-    return columnFamilyContext.getValueView();
   }
 
   @Override
@@ -160,6 +195,46 @@ class TransactionalColumnFamily<
           return false;
         });
     return isEmpty.get();
+  }
+
+  private void assertDoesNotExist(final ZeebeTransaction transaction) throws Exception {
+    final var value =
+        transaction.get(
+            transactionDb.getDefaultNativeHandle(),
+            transactionDb.getReadOptionsNativeHandle(),
+            columnFamilyContext.getKeyBufferArray(),
+            columnFamilyContext.getKeyLength());
+    if (value != null) {
+      throw new IllegalStateException("Key already exists");
+    }
+  }
+
+  private void assertExists(final ZeebeTransaction transaction) throws Exception {
+    final var value =
+        transaction.get(
+            transactionDb.getDefaultNativeHandle(),
+            transactionDb.getReadOptionsNativeHandle(),
+            columnFamilyContext.getKeyBufferArray(),
+            columnFamilyContext.getKeyLength());
+    if (value == null) {
+      throw new IllegalStateException("Key does not exist");
+    }
+  }
+
+  private DirectBuffer getValue(
+      final TransactionContext context, final ColumnFamilyContext columnFamilyContext) {
+    ensureInOpenTransaction(
+        context,
+        transaction -> {
+          final byte[] value =
+              transaction.get(
+                  transactionDb.getDefaultNativeHandle(),
+                  transactionDb.getReadOptionsNativeHandle(),
+                  columnFamilyContext.getKeyBufferArray(),
+                  columnFamilyContext.getKeyLength());
+          columnFamilyContext.wrapValueView(value);
+        });
+    return columnFamilyContext.getValueView();
   }
 
   public void forEach(final TransactionContext context, final Consumer<ValueType> consumer) {

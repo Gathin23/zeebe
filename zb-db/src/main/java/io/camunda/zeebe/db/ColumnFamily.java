@@ -20,12 +20,32 @@ import java.util.function.Consumer;
 public interface ColumnFamily<KeyType extends DbKey, ValueType extends DbValue> {
 
   /**
-   * Stores the key-value pair into the column family.
+   * Stores the key-value pair into the column family. Prefer {@link ColumnFamily#insert} or {@link
+   * ColumnFamily#update} which check that the key exists or does not exist. If update and insert
+   * can't be used, prefer {@link ColumnFamily#upsert} over this method.
    *
    * @param key the key
    * @param value the value
    */
+  @Deprecated
   void put(KeyType key, ValueType value);
+
+  /**
+   * Inserts a new key value pair into the column family.
+   *
+   * @throws IllegalStateException if key already exists
+   */
+  void insert(KeyType key, ValueType value);
+
+  /**
+   * Updates the value of an existing key in the column family.
+   *
+   * @throws IllegalStateException if key does not already exist
+   */
+  void update(KeyType key, ValueType value);
+
+  /** Inserts or updates a key value pair in the column family. */
+  void upsert(KeyType key, ValueType value);
 
   /**
    * The corresponding stored value in the column family to the given key.
