@@ -84,11 +84,11 @@ public final class BpmnDecisionBehavior {
         .mapLeft(
             failure ->
                 new Failure(
-                    "Expected to evaluate decision id '%s', but %s"
+                    "Expected to evaluate decision '%s', but %s"
                         .formatted(element.getDecisionId(), failure.getMessage())))
         .flatMap(drg -> parseDrg(drg.getResource()))
         // the failure must have the correct error type and scope, we only want to declare this once
-        .mapLeft(f -> new Failure(f.getMessage(), ErrorType.CALLED_ELEMENT_ERROR, scopeKey));
+        .mapLeft(f -> new Failure(f.getMessage(), ErrorType.CALLED_DECISION_ERROR, scopeKey));
   }
 
   private Either<Failure, PersistedDecision> findDecisionById(final String decisionId) {
